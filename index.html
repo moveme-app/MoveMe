@@ -3051,40 +3051,63 @@ if(sb){
 .install-app{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50;max-width:520px;margin:0 auto;display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:14px;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.18);font-family:var(--sans);font-size:15px;line-height:1.4}
 .install-app img{width:40px;height:40px;border-radius:10px;flex:none}
 .install-app p{margin:2px 0 0;color:var(--muted)}
-.install-app .install-actions{display:flex;gap:10px;margin-top:10px}
+.install-app .install-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
 .install-app button{font:inherit;cursor:pointer}
-.install-app .install-go{border:0;border-radius:10px;padding:8px 14px;background:var(--navy);color:var(--on-navy);font-weight:700}
+.install-go{display:inline-block;border:0;border-radius:10px;padding:9px 14px;background:var(--navy);color:var(--on-navy);font-weight:700;text-decoration:none}
 .install-app .install-close{border:0;background:none;color:var(--muted);text-decoration:underline;padding:8px 4px}
 .install-share{display:inline-block;width:16px;height:16px;vertical-align:-3px}
+.lp-getapp{background:var(--surface);padding:64px 0;border-top:1px solid var(--line)}
+.lp-getapp h2{font-family:var(--serif);font-size:clamp(28px,4vw,38px);margin:0 0 8px;color:var(--ink)}
+.lp-getapp .lede{color:var(--muted);margin:0 0 28px;max-width:52ch}
+.getapp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.getapp-card{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+.getapp-card img{width:56px;height:56px;border-radius:14px;flex:none}
+.getapp-card h3{margin:0 0 6px;font-size:19px;color:var(--ink)}
+.getapp-card p{margin:0 0 14px;color:var(--muted);line-height:1.5}
+.getapp-card ol{margin:0;padding-left:20px;color:var(--ink);line-height:1.7}
+.getapp-card small{display:block;margin-top:10px;color:var(--muted)}
+@media(max-width:700px){.getapp-grid{grid-template-columns:1fr}.lp-getapp{padding:48px 0}}
 </style>
 <script id="install-app">
-/* Installable app: offline-friendly shell plus a one-time "add to home screen" hint on the public landing page. */
+/* Installable app: Android download, iPhone home-screen steps, and a one-time hint on the public landing page. */
 (function(){
   if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const iosSafari = ios && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios|gsa/i.test(navigator.userAgent);
-  let deferred = null, dismissed = false;
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; paint(); });
-  window.addEventListener('appinstalled', () => { dismissed = true; document.querySelector('.install-app')?.remove(); });
+  const APK = 'Move_Me.apk';
+  const ua = navigator.userAgent;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || document.referrer.startsWith('android-app://');
+  const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const iosSafari = ios && /safari/i.test(ua) && !/crios|fxios|edgios|gsa/i.test(ua);
+  const android = /android/i.test(ua);
+  let dismissed = false;
   const share = '<svg class="install-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8"/></svg>';
-  function paint(){
+  function section(){
+    if(standalone || document.querySelector('.lp-getapp')) return;
+    const foot = document.querySelector('.lp-foot'); if(!foot) return;
+    const s = document.createElement('section');
+    s.className = 'lp-getapp'; s.id = 'get-the-app'; s.setAttribute('aria-labelledby', 'getapp-h');
+    s.innerHTML = '<div class="wrap"><h2 id="getapp-h">Take Move Me with you</h2><p class="lede">Keep your move plan one tap away on your phone. Same account, same plan.</p><div class="getapp-grid">' +
+      '<article class="getapp-card"><img src="icon-192.png" alt=""><div><h3>Android</h3><p>Download the Move Me app and open the file to install it.</p><a class="install-go" href="' + APK + '" download>Download for Android</a><small>Android 7 or newer. Your phone may ask you to allow the install and show a Play Protect notice, since the app isn\u2019t from the Play Store yet.</small></div></article>' +
+      '<article class="getapp-card"><img src="apple-touch-icon.png" alt=""><div><h3>iPhone</h3><p>Add Move Me to your home screen from Safari:</p><ol><li>Open <strong>move-me.co</strong> in Safari</li><li>Tap ' + share + ' <strong>Share</strong></li><li>Tap <strong>Add to Home Screen</strong></li></ol></div></article>' +
+      '</div></div>';
+    foot.before(s);
+  }
+  function hint(){
     const old = document.querySelector('.install-app');
     const onLanding = !!document.querySelector('.lp-nav');
-    if(standalone || dismissed || !onLanding || (!deferred && !iosSafari)){ old?.remove(); return; }
+    if(standalone || dismissed || !onLanding || !(iosSafari || android)){ old?.remove(); return; }
     if(old) return;
     const box = document.createElement('aside');
-    box.className = 'install-app'; box.setAttribute('aria-label', 'Install the Move Me app');
+    box.className = 'install-app'; box.setAttribute('aria-label', 'Get the Move Me app');
     box.innerHTML = '<img src="apple-touch-icon.png" alt=""><div><strong>Get the Move Me app</strong>' +
-      (deferred ? '<p>Install it on your phone for one-tap access to your move plan.</p><div class="install-actions"><button type="button" class="install-go">Install app</button><button type="button" class="install-close">Not now</button></div>'
-                : '<p>Tap ' + share + ' <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p><div class="install-actions"><button type="button" class="install-close">Got it</button></div>') + '</div>';
+      (android ? '<p>Install the app for one-tap access to your move plan.</p><div class="install-actions"><a class="install-go" href="' + APK + '" download>Download for Android</a><button type="button" class="install-close">Not now</button></div>'
+               : '<p>Tap ' + share + ' <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p><div class="install-actions"><button type="button" class="install-close">Got it</button></div>') + '</div>';
     box.querySelector('.install-close').onclick = () => { dismissed = true; box.remove(); };
-    const go = box.querySelector('.install-go');
-    if(go) go.onclick = async () => { const p = deferred; deferred = null; box.remove(); try{ await p.prompt(); }catch(e){} };
+    const go = box.querySelector('.install-go'); if(go) go.addEventListener('click', () => { dismissed = true; setTimeout(() => box.remove(), 300); });
     document.body.append(box);
   }
+  function paint(){ if(document.querySelector('.lp-nav')) section(); hint(); }
   new MutationObserver(paint).observe(document.getElementById('app') || document.body, {childList: true});
   paint();
 })();
