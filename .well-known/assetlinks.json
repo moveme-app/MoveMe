@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "co.move_me.www.twa",
+      "sha256_cert_fingerprints": [
+        "62:CD:3F:31:3F:25:97:20:48:37:04:49:F3:A1:9E:57:92:2B:96:DC:2E:42:C8:95:EE:7C:D5:BD:24:52:00:46"
+      ]
+    }
+  }
+]
