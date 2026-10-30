@@ -2632,8 +2632,8 @@ document.addEventListener('click',e=>{const cancel=e.target.closest('[data-provi
 
 function unifiedRole(){return state.admin?'admin':state.provider?'provider':state.signedIn?'customer':null;}
 function headerAction(label,destination,active){return `<button type="button" class="header-link" data-header-destination="${destination}" ${active?'aria-current="page"':''}>${label}</button>`;}
-function unifiedHeader(role,screen,focused=false){const links=role==='customer'?[['My move','move'],['Past moves','past']]:role==='provider'?[['Bookings','bookings'],['Calendar','calendar'],['Earnings','earnings']]:[['Providers','providers'],['Booking issues','issues'],['Payouts','payouts']];const active={plan:'move',setup:'move',confirmation:'move',review:'move',provhome:'bookings',providerpayouts:'earnings',adminhome:'providers'}[screen];return `<header class="topbar unified-header"><div class="wrap"><button type="button" class="mark" data-header-destination="dashboard" aria-label="Move Me dashboard"><i aria-hidden="true"></i>Move Me</button><button type="button" class="header-menu-toggle" aria-expanded="false" aria-controls="signed-in-navigation" data-header-menu>Menu</button><nav id="signed-in-navigation" class="unified-navigation" aria-label="${role==='admin'?'Administration':role==='provider'?'Business':'Account'} navigation">${focused?headerAction('Back to dashboard','dashboard',false):links.map(([label,dest])=>headerAction(label,dest,dest===active)).join('')}<details class="header-account"><summary>Account</summary><div class="header-account-menu">${headerAction(role==='provider'?'Business profile':role==='admin'?'Account details':'Profile','profile',screen==='register')}${role==='customer'?headerAction('Edit move','editmove',false):''}<button type="button" class="header-link" data-signout>Sign out</button></div></details></nav></div></header>`;}
-function navigateUnifiedHeader(destination){const role=unifiedRole();document.querySelector('.header-account')?.removeAttribute('open');document.querySelector('.unified-header')?.removeAttribute('data-menu-open');if(destination==='dashboard'){if(role==='provider')renderProviderHome();else if(role==='admin')renderAdminHome();else state.move?renderPlan():renderSetup();}else if(destination==='move')state.move?renderPlan():renderSetup();else if(destination==='past')showPastMoves();else if(destination==='bookings')renderProviderHome();else if(destination==='calendar')openProviderCalendar();else if(destination==='earnings')renderProviderPayouts();else if(destination==='providers')renderAdminHome();else if(destination==='issues')showBookingSupport();else if(destination==='payouts')showAdminPayouts();else if(destination==='editmove')renderSetup();else if(destination==='profile'){if(role==='provider')renderProviderProfileEdit();else if(role==='customer'){state.returnTo=null;renderRegister();}else{const dialog=openProviderDialog('Admin account');dialog.querySelector('.provider-dialog-body').innerHTML='<p>You are signed in with administrator access.</p><p class="hint">Manage your sign-in credentials using the password reset option.</p>';}}if(!['calendar','past','issues','payouts'].includes(destination))window.scrollTo(0,0);}
+function unifiedHeader(role,screen,focused=false){const links=role==='customer'?[['My move','move'],['Past moves','past']]:role==='provider'?[['Bookings','bookings'],['Calendar','calendar'],['Earnings','earnings']]:[['Providers','providers'],['Customers','customers'],['Booking issues','issues'],['Payouts','payouts']];const active={plan:'move',setup:'move',confirmation:'move',review:'move',provhome:'bookings',providerpayouts:'earnings',adminhome:'providers',admincustomers:'customers'}[screen];return `<header class="topbar unified-header"><div class="wrap"><button type="button" class="mark" data-header-destination="dashboard" aria-label="Move Me dashboard"><i aria-hidden="true"></i>Move Me</button><button type="button" class="header-menu-toggle" aria-expanded="false" aria-controls="signed-in-navigation" data-header-menu>Menu</button><nav id="signed-in-navigation" class="unified-navigation" aria-label="${role==='admin'?'Administration':role==='provider'?'Business':'Account'} navigation">${focused?headerAction('Back to dashboard','dashboard',false):links.map(([label,dest])=>headerAction(label,dest,dest===active)).join('')}<details class="header-account"><summary>Account</summary><div class="header-account-menu">${headerAction(role==='provider'?'Business profile':role==='admin'?'Account details':'Profile','profile',screen==='register')}${role==='customer'?headerAction('Edit move','editmove',false):''}<button type="button" class="header-link" data-signout>Sign out</button></div></details></nav></div></header>`;}
+function navigateUnifiedHeader(destination){const role=unifiedRole();document.querySelector('.header-account')?.removeAttribute('open');document.querySelector('.unified-header')?.removeAttribute('data-menu-open');if(destination==='dashboard'){if(role==='provider')renderProviderHome();else if(role==='admin')renderAdminHome();else state.move?renderPlan():renderSetup();}else if(destination==='move')state.move?renderPlan():renderSetup();else if(destination==='past')showPastMoves();else if(destination==='bookings')renderProviderHome();else if(destination==='calendar')openProviderCalendar();else if(destination==='earnings')renderProviderPayouts();else if(destination==='providers')renderAdminHome();else if(destination==='issues')showBookingSupport();else if(destination==='payouts')showAdminPayouts();else if(destination==='customers')renderAdminCustomers();else if(destination==='editmove')renderSetup();else if(destination==='profile'){if(role==='provider')renderProviderProfileEdit();else if(role==='customer'){state.returnTo=null;renderRegister();}else{const dialog=openProviderDialog('Admin account');dialog.querySelector('.provider-dialog-body').innerHTML='<p>You are signed in with administrator access.</p><p class="hint">Manage your sign-in credentials using the password reset option.</p>';}}if(!['calendar','past','issues','payouts'].includes(destination))window.scrollTo(0,0);}
 function installUnifiedHeader(screen){const role=unifiedRole();if(!role)return;const focused=!!document.getElementById('service-wizard')||screen==='review';const existing=document.querySelector('#app>header,.provider-join-brand,.setup-top');if(!existing)return;const template=document.createElement('template');template.innerHTML=unifiedHeader(role,screen,focused);existing.replaceWith(template.content.firstElementChild);if(role==='provider'){document.querySelector('.payout-page-heading>[data-provider-home]')?.remove();document.querySelector('.setup-form-sidebar>[data-provider-home]')?.remove();document.querySelector('.provider-quick-actions>[data-provider-payouts]')?.remove();document.querySelector('.provider-quick-actions .provider-availability-controls>[data-provider-calendar]')?.remove();}if(role==='admin'){document.querySelector('.admin-support-entry')?.remove();document.querySelector('.admin-payout-entry')?.remove();}const form=document.querySelector('#register,#setup');if(form){form.dataset.headerDirty='false';form.addEventListener('input',()=>form.dataset.headerDirty='true');form.addEventListener('change',()=>form.dataset.headerDirty='true');}}
 const headerPaintAvailability=paintAvailabilityControls;paintAvailabilityControls=function(...args){headerPaintAvailability(...args);if(document.querySelector('.unified-header'))document.querySelector('.provider-quick-actions .provider-availability-controls>[data-provider-calendar]')?.remove();};
 const headerLanding=renderLanding;
@@ -2973,7 +2973,7 @@ const SCREENS = {providerpayouts:renderProviderPayouts, adminhome:renderAdminHom
 
 // Screens that need someone signed in fall back to the home page after sign out.
 function screenAllowed(name){
-  if(name === "adminhome") return !!state.admin;
+  if(name === "adminhome" || name === "admincustomers") return !!state.admin;
   if(name === "setup") return state.signedIn;
   if(name === "plan" || name === "review") return state.signedIn && !!state.move;
   if(name === "confirmation") return state.signedIn && Object.keys(state.bookings||{}).length > 0;
@@ -3111,6 +3111,123 @@ if(sb){
   new MutationObserver(paint).observe(document.getElementById('app') || document.body, {childList: true});
   paint();
 })();
+</script>
+<style id="admin-customers-style">
+.admin-customers .customers-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:8px 0 20px}
+.admin-customers h1{margin:0}
+.admin-customers .intro{margin:6px 0 0;color:var(--muted)}
+.customer-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 22px}
+.customer-stats div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.customer-stats span{display:block;color:var(--muted);font-size:14px}
+.customer-stats strong{display:block;font-size:28px;margin-top:4px;color:var(--ink)}
+.customer-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
+.customer-tools input{flex:1;min-width:220px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--card);color:var(--ink)}
+.customer-filters{display:flex;flex-wrap:wrap;gap:8px}
+.customer-filters button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.customer-filters button[aria-pressed="true"]{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.customer-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.customer-table-wrap{overflow-x:auto;border-radius:14px}
+.customer-table th,.customer-table td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+.customer-table thead th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--surface)}
+.customer-table td small,.customer-table th small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+.customer-row{cursor:pointer}.customer-row:hover td,.customer-row:hover th{background:var(--surface)}
+.customer-row th{font-weight:700}
+.customer-row .toggle{border:0;background:none;color:var(--ink);font:inherit;font-weight:700;text-align:left;padding:0;cursor:pointer}
+.no-plan{color:var(--muted)}
+.plan-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;background:var(--surface);color:var(--muted)}
+.plan-pill.yes{background:#E3EFEA;color:#1F5D45}
+.customer-detail td{background:var(--surface)}
+.customer-detail dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 20px;margin:0 0 14px}
+.customer-detail dt{font-size:12px;color:var(--muted);font-weight:700}.customer-detail dd{margin:3px 0 0;overflow-wrap:anywhere}
+.customer-detail h4{margin:6px 0 8px}
+.customer-bookings{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.customer-bookings li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.customer-bookings small{color:var(--muted)}
+@media(max-width:800px){.customer-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-detail dl{grid-template-columns:1fr 1fr}.customer-table .hide-sm{display:none}}
+</style>
+<script id="admin-customers">
+/* Admin: who has signed up, who has built a plan, and what they have booked. */
+let adminCustomerRows = [], adminCustomerFilter = 'all', adminCustomerSearch = '', adminCustomerOpen = null, adminCustomerError = '', adminCustomerLoading = false;
+function adminCustomerWhen(v){ return v ? new Date(v).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '\u2014'; }
+function adminCustomerMatches(r){
+  const q = adminCustomerSearch.trim().toLowerCase();
+  if(q && !((r.name||'') + ' ' + (r.email||'') + ' ' + (r.phone||'')).toLowerCase().includes(q)) return false;
+  if(adminCustomerFilter === 'plan') return r.has_plan;
+  if(adminCustomerFilter === 'noplan') return !r.has_plan;
+  if(adminCustomerFilter === 'booked') return r.bookings_total > 0;
+  return true;
+}
+function adminCustomerDetail(r){
+  const m = r.move || {};
+  const facts = [['Phone', r.phone || 'Not added'], ['Email confirmed', r.email_confirmed ? 'Yes' : 'Not yet'], ['Text updates', r.sms_opt_in ? 'Opted in' : 'No'],
+    ['Current home', m.fromAddress || m.from || '\u2014'], ['New home', m.toAddress || m.to || '\u2014'], ['Plan last saved', adminCustomerWhen(r.plan_updated_at)],
+    ['Tasks checked off', String(r.tasks_done)], ['Handling themselves', r.diy_tasks + ' task' + (r.diy_tasks === 1 ? '' : 's')], ['Past moves', String(r.past_moves)]];
+  const bookings = (r.bookings || []).map(b => `<li><span><strong>${esc(b.provider_name)}</strong> \u00b7 ${esc(b.service_type)}<br><small>${fmtDate(parseDate(b.service_date))} \u00b7 ${esc(WINDOWS[b.time_window] || b.time_window)} \u00b7 ${esc(requestStatusLabel(b.status))}</small></span><span>${serviceCurrency(Number(b.service_price))} <button type="button" class="clear" data-admin-booking="${esc(b.id)}">View booking</button></span></li>`).join('');
+  return `<dl>${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><h4>Bookings (${r.bookings_total})</h4>${bookings ? `<ul class="customer-bookings">${bookings}</ul>` : '<p class="hint">No bookings yet.</p>'}`;
+}
+function drawAdminCustomers(){
+  const body = document.getElementById('admin-customers-body'); if(!body) return;
+  const all = adminCustomerRows, weekAgo = Date.now() - 7 * 864e5;
+  document.getElementById('customer-stats').innerHTML = [['Customers', all.length], ['Built a plan', all.filter(r => r.has_plan).length],
+    ['Booked a service', all.filter(r => r.bookings_total > 0).length], ['Joined in last 7 days', all.filter(r => Date.parse(r.created_at) > weekAgo).length]]
+    .map(([k, v]) => `<div><span>${k}</span><strong>${adminCustomerLoading && !all.length ? '\u2014' : v}</strong></div>`).join('');
+  document.querySelectorAll('[data-customer-filter]').forEach(b => {
+    const k = b.dataset.customerFilter, n = all.filter(r => k === 'all' || (k === 'plan' ? r.has_plan : k === 'noplan' ? !r.has_plan : r.bookings_total > 0)).length;
+    b.setAttribute('aria-pressed', String(k === adminCustomerFilter)); b.querySelector('span').textContent = n;
+  });
+  if(adminCustomerError){ body.innerHTML = `<p class="form-err" role="alert">${esc(adminCustomerError)}</p><button type="button" class="btn btn-line" data-customers-refresh>Try again</button>`; return; }
+  if(adminCustomerLoading && !all.length){ body.innerHTML = '<p role="status">Loading customers\u2026</p>'; return; }
+  const rows = all.filter(adminCustomerMatches);
+  if(!rows.length){ body.innerHTML = `<p class="hint">${all.length ? 'No customers match this search.' : 'No customers have signed up yet.'}</p>`; return; }
+  body.innerHTML = `<div class="customer-table-wrap"><table class="customer-table"><thead><tr><th scope="col">Customer</th><th scope="col">Joined</th><th scope="col" class="hide-sm">Last sign-in</th><th scope="col">Move plan</th><th scope="col">Bookings</th></tr></thead><tbody>${rows.map(r => {
+    const m = r.move, open = adminCustomerOpen === r.id;
+    const plan = r.has_plan ? `<span class="plan-pill yes">Plan built</span><small>${esc(m.from || '')} \u2192 ${esc(m.to || '')}${m.date ? ' \u00b7 ' + fmtDate(parseDate(m.date)) : ''}${m.size && SIZES[m.size] ? ' \u00b7 ' + esc(SIZES[m.size][0]) : ''}</small>` : '<span class="plan-pill">No plan yet</span>';
+    return `<tr class="customer-row" data-customer-row="${esc(r.id)}"><th scope="row"><button type="button" class="toggle" aria-expanded="${open}">${esc(r.name || 'No name')}</button><small>${esc(r.email)}</small></th><td>${adminCustomerWhen(r.created_at)}</td><td class="hide-sm">${adminCustomerWhen(r.last_sign_in_at)}</td><td>${plan}</td><td>${r.bookings_total ? `${r.bookings_active} active \u00b7 ${r.bookings_total} total<small>${serviceCurrency(Number(r.booked_value))} booked</small>` : '<span class="no-plan">None</span>'}</td></tr>${open ? `<tr class="customer-detail"><td colspan="5">${adminCustomerDetail(r)}</td></tr>` : ''}`;
+  }).join('')}</tbody></table></div><p class="hint">${rows.length} of ${all.length} customer${all.length === 1 ? '' : 's'} shown. Select a customer to see their details and bookings.</p>`;
+}
+async function loadAdminCustomers(){
+  adminCustomerLoading = true; adminCustomerError = ''; drawAdminCustomers();
+  try{
+    const {data, error} = await sb.rpc('moveme_admin_customers');
+    if(error) throw error;
+    adminCustomerRows = Array.isArray(data) ? data : [];
+  }catch(e){ adminCustomerError = 'Could not load customers. ' + requestError(e); }
+  adminCustomerLoading = false;
+  if(curScreen === 'admincustomers') drawAdminCustomers();
+}
+function exportAdminCustomers(){
+  const cols = [['Name', r => r.name], ['Email', r => r.email], ['Phone', r => r.phone], ['Joined', r => r.created_at], ['Last sign-in', r => r.last_sign_in_at],
+    ['Email confirmed', r => r.email_confirmed ? 'Yes' : 'No'], ['Plan built', r => r.has_plan ? 'Yes' : 'No'], ['Moving from', r => r.move?.from], ['Moving to', r => r.move?.to],
+    ['Move date', r => r.move?.date], ['Home size', r => r.move?.size && SIZES[r.move.size] ? SIZES[r.move.size][0] : ''], ['Tasks checked off', r => r.tasks_done],
+    ['Active bookings', r => r.bookings_active], ['Total bookings', r => r.bookings_total], ['Booked value', r => r.booked_value]];
+  const cell = v => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const csv = [cols.map(c => c[0]).join(','), ...adminCustomerRows.filter(adminCustomerMatches).map(r => cols.map(c => cell(c[1](r))).join(','))].join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+  a.download = 'moveme-customers-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.append(a); a.click(); a.remove();
+}
+function renderAdminCustomers(){
+  if(!state.admin){ renderSignIn('admin'); return; }
+  document.getElementById('app').innerHTML = `<header class="topbar"><div class="wrap"></div></header><main class="page admin-customers"><div class="wrap">
+    <div class="customers-head"><div><h1>Customers</h1><p class="intro">Everyone who has created a customer account, their move plan and their bookings.</p></div>
+    <div class="customer-filters"><button type="button" class="btn btn-line btn-sm" data-customers-export>Export CSV</button><button type="button" class="btn btn-line btn-sm" data-customers-refresh>Refresh</button></div></div>
+    <section class="customer-stats" id="customer-stats" aria-label="Customer overview"></section>
+    <div class="customer-tools"><input type="search" id="customer-search" placeholder="Search by name, email or phone" aria-label="Search customers" value="${esc(adminCustomerSearch)}">
+    <div class="customer-filters" role="group" aria-label="Filter customers">${[['all', 'All'], ['plan', 'Built a plan'], ['noplan', 'No plan yet'], ['booked', 'Booked']].map(([k, l]) => `<button type="button" data-customer-filter="${k}">${l} (<span>0</span>)</button>`).join('')}</div></div>
+    <div id="admin-customers-body" aria-live="polite"></div></div></main>`;
+  installUnifiedHeader('admincustomers');
+  document.getElementById('customer-search').addEventListener('input', e => { adminCustomerSearch = e.target.value; drawAdminCustomers(); });
+  drawAdminCustomers(); loadAdminCustomers();
+}
+renderAdminCustomers = navWrap('admincustomers', renderAdminCustomers);
+SCREENS.admincustomers = renderAdminCustomers;
+document.addEventListener('click', e => {
+  if(curScreen !== 'admincustomers') return;
+  const f = e.target.closest('[data-customer-filter]'); if(f){ adminCustomerFilter = f.dataset.customerFilter; drawAdminCustomers(); return; }
+  if(e.target.closest('[data-customers-refresh]')){ loadAdminCustomers(); return; }
+  if(e.target.closest('[data-customers-export]')){ exportAdminCustomers(); return; }
+  if(e.target.closest('[data-admin-booking]')) return;
+  const row = e.target.closest('[data-customer-row]'); if(row){ adminCustomerOpen = adminCustomerOpen === row.dataset.customerRow ? null : row.dataset.customerRow; drawAdminCustomers(); }
+});
 </script>
 </body>
 </html>
