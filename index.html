@@ -1249,12 +1249,13 @@ function renderForgot(kind){
     const btn = form.querySelector("button[type=submit]"); busy(btn, true, "Sending…");
     try{
       const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo: AUTH_REDIRECT_URL || undefined});
-      if(error){ const m = authMessage(error); busy(btn,false); showErr(m === "exists" ? DB_DOWN : m); return; }
+      if(error){ const m = authMessage(error); busy(btn,false); showErr(m === DB_DOWN || m === "exists" ? DB_DOWN : /too many|rate limit/i.test(m) ? "Too many reset requests right now. Wait a little and try again, or contact the Move Me team and they can reset your password for you." : "We couldn\u2019t send a reset email right now. Contact the Move Me team and they can reset your password for you."); return; }
     }catch(err){ busy(btn,false); showErr(DB_DOWN); return; }
     // Same message whether or not the account exists, so the form can't be used to check emails.
     form.innerHTML = `<h2>Check your email</h2>
       <p class="hint">If there's a Move Me account for <b>${esc(email)}</b>, a reset link is on its way. Open it on this device to choose a new password.</p>
       <p class="hint">Nothing after a few minutes? Check your spam folder, or try again.</p>
+      <p class="hint">Still no email? Contact the Move Me team and they can reset your password for you.</p>
       <button type="button" class="btn btn-coral" data-login="${kind}">Back to sign in</button>`;
   });
   input.focus({preventScroll:true});
@@ -2632,8 +2633,8 @@ document.addEventListener('click',e=>{const cancel=e.target.closest('[data-provi
 
 function unifiedRole(){return state.admin?'admin':state.provider?'provider':state.signedIn?'customer':null;}
 function headerAction(label,destination,active){return `<button type="button" class="header-link" data-header-destination="${destination}" ${active?'aria-current="page"':''}>${label}</button>`;}
-function unifiedHeader(role,screen,focused=false){const links=role==='customer'?[['My move','move'],['Past moves','past']]:role==='provider'?[['Bookings','bookings'],['Calendar','calendar'],['Earnings','earnings']]:[['Providers','providers'],['Customers','customers'],['Booking issues','issues'],['Payouts','payouts']];const active={plan:'move',setup:'move',confirmation:'move',review:'move',provhome:'bookings',providerpayouts:'earnings',adminhome:'providers',admincustomers:'customers'}[screen];return `<header class="topbar unified-header"><div class="wrap"><button type="button" class="mark" data-header-destination="dashboard" aria-label="Move Me dashboard"><i aria-hidden="true"></i>Move Me</button><button type="button" class="header-menu-toggle" aria-expanded="false" aria-controls="signed-in-navigation" data-header-menu>Menu</button><nav id="signed-in-navigation" class="unified-navigation" aria-label="${role==='admin'?'Administration':role==='provider'?'Business':'Account'} navigation">${focused?headerAction('Back to dashboard','dashboard',false):links.map(([label,dest])=>headerAction(label,dest,dest===active)).join('')}<details class="header-account"><summary>Account</summary><div class="header-account-menu">${headerAction(role==='provider'?'Business profile':role==='admin'?'Account details':'Profile','profile',screen==='register')}${role==='customer'?headerAction('Edit move','editmove',false):''}<button type="button" class="header-link" data-signout>Sign out</button></div></details></nav></div></header>`;}
-function navigateUnifiedHeader(destination){const role=unifiedRole();document.querySelector('.header-account')?.removeAttribute('open');document.querySelector('.unified-header')?.removeAttribute('data-menu-open');if(destination==='dashboard'){if(role==='provider')renderProviderHome();else if(role==='admin')renderAdminHome();else state.move?renderPlan():renderSetup();}else if(destination==='move')state.move?renderPlan():renderSetup();else if(destination==='past')showPastMoves();else if(destination==='bookings')renderProviderHome();else if(destination==='calendar')openProviderCalendar();else if(destination==='earnings')renderProviderPayouts();else if(destination==='providers')renderAdminHome();else if(destination==='issues')showBookingSupport();else if(destination==='payouts')showAdminPayouts();else if(destination==='customers')renderAdminCustomers();else if(destination==='editmove')renderSetup();else if(destination==='profile'){if(role==='provider')renderProviderProfileEdit();else if(role==='customer'){state.returnTo=null;renderRegister();}else{const dialog=openProviderDialog('Admin account');dialog.querySelector('.provider-dialog-body').innerHTML='<p>You are signed in with administrator access.</p><p class="hint">Manage your sign-in credentials using the password reset option.</p>';}}if(!['calendar','past','issues','payouts'].includes(destination))window.scrollTo(0,0);}
+function unifiedHeader(role,screen,focused=false){const links=role==='customer'?[['My move','move'],['Past moves','past']]:role==='provider'?[['Bookings','bookings'],['Calendar','calendar'],['Earnings','earnings']]:[['Providers','providers'],['Customers','customers'],['Booking issues','issues'],['Payouts','payouts']];const active={plan:'move',setup:'move',confirmation:'move',review:'move',provhome:'bookings',providerpayouts:'earnings',adminhome:'providers',admincustomers:'customers'}[screen];return `<header class="topbar unified-header"><div class="wrap"><button type="button" class="mark" data-header-destination="dashboard" aria-label="Move Me dashboard"><i aria-hidden="true"></i>Move Me</button><button type="button" class="header-menu-toggle" aria-expanded="false" aria-controls="signed-in-navigation" data-header-menu>Menu</button><nav id="signed-in-navigation" class="unified-navigation" aria-label="${role==='admin'?'Administration':role==='provider'?'Business':'Account'} navigation">${focused?headerAction('Back to dashboard','dashboard',false):links.map(([label,dest])=>headerAction(label,dest,dest===active)).join('')}<details class="header-account"><summary>Account</summary><div class="header-account-menu">${headerAction(role==='provider'?'Business profile':role==='admin'?'Account details':'Profile','profile',screen==='register')}${role==='customer'?headerAction('Edit move','editmove',false):''}${headerAction('Change password','password',false)}<button type="button" class="header-link" data-signout>Sign out</button></div></details></nav></div></header>`;}
+function navigateUnifiedHeader(destination){const role=unifiedRole();document.querySelector('.header-account')?.removeAttribute('open');document.querySelector('.unified-header')?.removeAttribute('data-menu-open');if(destination==='dashboard'){if(role==='provider')renderProviderHome();else if(role==='admin')renderAdminHome();else state.move?renderPlan():renderSetup();}else if(destination==='move')state.move?renderPlan():renderSetup();else if(destination==='past')showPastMoves();else if(destination==='bookings')renderProviderHome();else if(destination==='calendar')openProviderCalendar();else if(destination==='earnings')renderProviderPayouts();else if(destination==='providers')renderAdminHome();else if(destination==='issues')showBookingSupport();else if(destination==='payouts')showAdminPayouts();else if(destination==='password')renderChangePassword();else if(destination==='customers')renderAdminCustomers();else if(destination==='editmove')renderSetup();else if(destination==='profile'){if(role==='provider')renderProviderProfileEdit();else if(role==='customer'){state.returnTo=null;renderRegister();}else{const dialog=openProviderDialog('Admin account');dialog.querySelector('.provider-dialog-body').innerHTML='<p>You are signed in with administrator access.</p><p class="hint">Manage your sign-in credentials using the password reset option.</p>';}}if(!['calendar','past','issues','payouts'].includes(destination))window.scrollTo(0,0);}
 function installUnifiedHeader(screen){const role=unifiedRole();if(!role)return;const focused=!!document.getElementById('service-wizard')||screen==='review';const existing=document.querySelector('#app>header,.provider-join-brand,.setup-top');if(!existing)return;const template=document.createElement('template');template.innerHTML=unifiedHeader(role,screen,focused);existing.replaceWith(template.content.firstElementChild);if(role==='provider'){document.querySelector('.payout-page-heading>[data-provider-home]')?.remove();document.querySelector('.setup-form-sidebar>[data-provider-home]')?.remove();document.querySelector('.provider-quick-actions>[data-provider-payouts]')?.remove();document.querySelector('.provider-quick-actions .provider-availability-controls>[data-provider-calendar]')?.remove();}if(role==='admin'){document.querySelector('.admin-support-entry')?.remove();document.querySelector('.admin-payout-entry')?.remove();}const form=document.querySelector('#register,#setup');if(form){form.dataset.headerDirty='false';form.addEventListener('input',()=>form.dataset.headerDirty='true');form.addEventListener('change',()=>form.dataset.headerDirty='true');}}
 const headerPaintAvailability=paintAvailabilityControls;paintAvailabilityControls=function(...args){headerPaintAvailability(...args);if(document.querySelector('.unified-header'))document.querySelector('.provider-quick-actions .provider-availability-controls>[data-provider-calendar]')?.remove();};
 const headerLanding=renderLanding;
@@ -3163,7 +3164,7 @@ function adminCustomerDetail(r){
     ['Current home', m.fromAddress || m.from || '\u2014'], ['New home', m.toAddress || m.to || '\u2014'], ['Plan last saved', adminCustomerWhen(r.plan_updated_at)],
     ['Tasks checked off', String(r.tasks_done)], ['Handling themselves', r.diy_tasks + ' task' + (r.diy_tasks === 1 ? '' : 's')], ['Past moves', String(r.past_moves)]];
   const bookings = (r.bookings || []).map(b => `<li><span><strong>${esc(b.provider_name)}</strong> \u00b7 ${esc(b.service_type)}<br><small>${fmtDate(parseDate(b.service_date))} \u00b7 ${esc(WINDOWS[b.time_window] || b.time_window)} \u00b7 ${esc(requestStatusLabel(b.status))}</small></span><span>${serviceCurrency(Number(b.service_price))} <button type="button" class="clear" data-admin-booking="${esc(b.id)}">View booking</button></span></li>`).join('');
-  return `<dl>${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><h4>Bookings (${r.bookings_total})</h4>${bookings ? `<ul class="customer-bookings">${bookings}</ul>` : '<p class="hint">No bookings yet.</p>'}`;
+  return `<dl>${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><p class="admin-reset-row"><button type="button" class="btn btn-line btn-sm" data-admin-reset-pw="${esc(r.id)}" data-reset-name="${esc(r.name || r.email)}" data-reset-email="${esc(r.email)}">Reset password</button><span class="hint">Creates a temporary password you can give the customer.</span></p><h4>Bookings (${r.bookings_total})</h4>${bookings ? `<ul class="customer-bookings">${bookings}</ul>` : '<p class="hint">No bookings yet.</p>'}`;
 }
 function drawAdminCustomers(){
   const body = document.getElementById('admin-customers-body'); if(!body) return;
@@ -3225,9 +3226,54 @@ document.addEventListener('click', e => {
   const f = e.target.closest('[data-customer-filter]'); if(f){ adminCustomerFilter = f.dataset.customerFilter; drawAdminCustomers(); return; }
   if(e.target.closest('[data-customers-refresh]')){ loadAdminCustomers(); return; }
   if(e.target.closest('[data-customers-export]')){ exportAdminCustomers(); return; }
-  if(e.target.closest('[data-admin-booking]')) return;
+  if(e.target.closest('[data-admin-booking],[data-admin-reset-pw]')) return;
   const row = e.target.closest('[data-customer-row]'); if(row){ adminCustomerOpen = adminCustomerOpen === row.dataset.customerRow ? null : row.dataset.customerRow; drawAdminCustomers(); }
 });
+</script>
+<style id="admin-reset-style">
+.admin-reset-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px}.admin-reset-row .hint{margin:0}
+.temp-password{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.temp-password code{font-size:22px;font-weight:700;letter-spacing:.04em;padding:10px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line);user-select:all}
+</style>
+<script id="admin-reset">
+/* Admin-assisted password reset: works without email. The admin passes the temporary password on to the person. */
+(function(){
+  const providerDetails = adminApplicationDetails;
+  adminApplicationDetails = function(r){
+    return providerDetails(r) + `<section class="admin-detail-section"><h3>Sign-in help</h3><p class="admin-reset-row"><button type="button" class="btn btn-line btn-sm" data-admin-reset-pw="${esc(r.id)}" data-reset-name="${esc(r.business_name === 'Business setup incomplete' ? r.email : r.business_name)}" data-reset-email="${esc(r.email)}">Reset password</button><span class="hint">Creates a temporary password you can give the provider.</span></p></section>`;
+  };
+  function showTempPassword(name, email, pw){
+    const dialog = openProviderDialog('Temporary password'), body = dialog.querySelector('.provider-dialog-body');
+    body.removeAttribute('role');
+    body.innerHTML = `<p>New password for <strong>${esc(name)}</strong> (${esc(email)}):</p><div class="temp-password"><code>${esc(pw)}</code><button type="button" class="btn btn-line btn-sm" data-copy-temp>Copy</button></div><p class="hint">Their old password no longer works. Share this privately (for example by text or in person) and ask them to sign in and choose a new one under Account → Change password. This password won\u2019t be shown again.</p><button type="button" class="btn btn-coral" data-temp-done>Done</button>`;
+    body.querySelector('[data-copy-temp]').onclick = async e => { try{ await navigator.clipboard.writeText(pw); e.target.textContent = 'Copied'; }catch(err){ e.target.textContent = 'Select and copy'; } };
+    body.querySelector('[data-temp-done]').onclick = () => dialog.close();
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-admin-reset-pw]'); if(!b || !state.admin) return;
+    e.preventDefault(); e.stopPropagation();
+    const id = b.dataset.adminResetPw, name = b.dataset.resetName, email = b.dataset.resetEmail;
+    showConfirm({title: 'Reset this password?', body: `${name} (${email}) will get a new temporary password and their current one will stop working.`, confirmLabel: 'Reset password', danger: true,
+      async onConfirm(){
+        try{
+          const {data, error} = await sb.rpc('moveme_admin_reset_password', {p_user_id: id});
+          if(error) throw error;
+          if(!data) throw Error('No password returned.');
+          showTempPassword(name, email, data);
+        }catch(err){ toast('Couldn\u2019t reset the password. ' + requestError(err)); }
+      }});
+  }, true);
+})();
+</script>
+<script id="change-password">
+/* Signed-in people can change their own password; reuses the new-password form. */
+function renderChangePassword(){
+  renderNewPassword();
+  const intro = document.querySelector('.setup-main > div:first-child');
+  if(intro){ intro.querySelector('h1').textContent = 'Change your password.'; intro.querySelector('.lede').textContent = 'Choose a new password for your Move Me account. Use at least 8 characters.'; }
+  const form = document.getElementById('newpw');
+  if(form) form.insertAdjacentHTML('beforeend', '<p class="fineprint"><button type="button" class="clear" data-header-destination="dashboard">Cancel</button></p>');
+}
 </script>
 </body>
 </html>
